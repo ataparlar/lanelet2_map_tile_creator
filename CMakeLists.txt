@@ -2,13 +2,16 @@ cmake_minimum_required(VERSION 3.5)
 project(dummy_lanelet2)
 
 add_compile_options(-Wall -Wextra -Wpedantic)
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
 find_package(lanelet2 REQUIRED)
+find_package(Osmium REQUIRED)
 
 include_directories(include
+        ${OSMIUM_INCLUDE_DIRS}
         ${lanelet2_INCLUDE_DIRS})
 
 set(DUMMY_LANELET2_LIB_SRC
@@ -22,6 +25,7 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
         ${DUMMY_LANELET2_LIB_HEADERS}
         ${DUMMY_LANELET2_LIB_SRC})
 target_link_libraries(${PROJECT_NAME}
+        ${OSMIUM_LIBRARIES}
         ${lanelet2_LIBRARIES})
 
 #target_compile_options(${PROJECT_NAME} PRIVATE
