@@ -1,0 +1,6 @@
+/*:
+  ros__parameters:
+    origin_lat: 41.043727
+    origin_lon: 28.801002
+    origin_height: 100.0
+    save_directory: /home/ataparlar/projects/autoware/src/external/dummy_lanelet2/export/
