@@ -8,17 +8,23 @@ find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
 find_package(lanelet2 REQUIRED)
+find_package(GDAL REQUIRED)
 find_package(Osmium REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 include_directories(include
         ${OSMIUM_INCLUDE_DIRS}
+        ${GDAL_INCLUDE_DIRS}
+        ${NLOHMANN_JSON_INCLUDE_DIRS}
         ${lanelet2_INCLUDE_DIRS})
 
 set(DUMMY_LANELET2_LIB_SRC
-        src/dummy_lanelet2.cpp)
+        src/dummy_lanelet2.cpp
+        src/lanelet2_divide_json.cpp)
 
 set(DUMMY_LANELET2_LIB_HEADERS
-        include/dummy_lanelet2/dummy_lanelet2.hpp)
+        include/dummy_lanelet2/dummy_lanelet2.hpp
+        include/lanelet2_divide_json/lanelet2_divide_json.hpp)
 
 
 ament_auto_add_library(${PROJECT_NAME} SHARED
@@ -26,6 +32,8 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
         ${DUMMY_LANELET2_LIB_SRC})
 target_link_libraries(${PROJECT_NAME}
         ${OSMIUM_LIBRARIES}
+        ${GDAL_LIBRARIES}
+        ${NLOHMANN_JSON_LIBRARIES}
         ${lanelet2_LIBRARIES})
 
 #target_compile_options(${PROJECT_NAME} PRIVATE
@@ -50,6 +58,9 @@ target_link_libraries(${PROJECT_NAME}
 rclcpp_components_register_node(${PROJECT_NAME}
         PLUGIN "dummy_lanelet2::DummyLanelet2"
         EXECUTABLE ${PROJECT_NAME}_exe)
+rclcpp_components_register_node(${PROJECT_NAME}
+        PLUGIN "lanelet2_divide::Lanelet2DivideJson"
+        EXECUTABLE lanelet2_divide_json_exe)
 
 if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)
