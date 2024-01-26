@@ -11,11 +11,13 @@ find_package(lanelet2 REQUIRED)
 find_package(GDAL REQUIRED)
 find_package(Osmium REQUIRED)
 find_package(nlohmann_json REQUIRED)
+find_package(PROJ REQUIRED)
 
 include_directories(include
         ${OSMIUM_INCLUDE_DIRS}
         ${GDAL_INCLUDE_DIRS}
         ${NLOHMANN_JSON_INCLUDE_DIRS}
+        ${PROJ_INCLUDE_DIRS}
         ${lanelet2_INCLUDE_DIRS})
 
 set(DUMMY_LANELET2_LIB_SRC
@@ -34,6 +36,7 @@ target_link_libraries(${PROJECT_NAME}
         ${OSMIUM_LIBRARIES}
         ${GDAL_LIBRARIES}
         ${NLOHMANN_JSON_LIBRARIES}
+        PROJ::proj
         ${lanelet2_LIBRARIES})
 
 #target_compile_options(${PROJECT_NAME} PRIVATE

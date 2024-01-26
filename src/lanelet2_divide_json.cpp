@@ -4,24 +4,12 @@
 
 #include "lanelet2_divide_json/lanelet2_divide_json.hpp"
 
-#include "lanelet2_io/Io.h"
-#include "lanelet2_projection/UTM.h"
 #include "ogrsf_frmts.h"
-#include "osmium/io/reader.hpp"
 #include "osmium/io/writer.hpp"
+#include "proj.h"
 
 #include <nlohmann/json.hpp>
 
-#include <lanelet2_core/LaneletMap.h>
-#include <lanelet2_core/geometry/Area.h>
-#include <lanelet2_core/geometry/Lanelet.h>
-#include <lanelet2_core/primitives/Area.h>
-#include <lanelet2_core/primitives/Lanelet.h>
-#include <lanelet2_core/primitives/LineString.h>
-#include <lanelet2_core/primitives/Point.h>
-#include <lanelet2_core/primitives/Polygon.h>
-#include <lanelet2_core/utility/Units.h>
-#include <lanelet2_io/io_handlers/Writer.h>
 #include <ogr_feature.h>
 
 #include <fstream>
@@ -29,53 +17,79 @@
 namespace lanelet2_divide
 {
 
-Lanelet2DivideJson::Lanelet2DivideJson(const rclcpp::NodeOptions & options) : Node("lanelet2_divide_json", options)
+Lanelet2DivideJson::Lanelet2DivideJson(const rclcpp::NodeOptions & options)
+: Node("lanelet2_divide_json", options)
 {
-
   this->declare_parameter("save_directory", "");
 
   save_directory = this->get_parameter("save_directory").as_string();
-
 
   GDALAllRegister();
 
   GDALDataset * poDS;
   poDS = (GDALDataset *)GDALOpenEx(
-    "/home/ataparlar/data/gis_data/mgrs_grids/UTM_Datum_WGS84_35T_polygons.gpkg", GDAL_OF_VECTOR,
-    NULL, NULL, NULL);
+    "//home/ataparlar/projects/qgis/lanelet2_divider_project/data/35t_100m_small.gpkg",
+    GDAL_OF_VECTOR, NULL, NULL, NULL);
   if (poDS == NULL) {
     printf("Open failed.\n");
     exit(1);
   }
 
-  // 10 km Grids
-  OGRLayer * gridLayer_ = poDS->GetLayerByName("35T_10km");
+  PJ_CONTEXT * C = proj_context_create();
 
-  std::cout << "Count before filter:  " << gridLayer_->GetFeatureCount() << std::endl;
-  gridLayer_->SetAttributeFilter("MGRS_10 LIKE '35TPF%'");
-  std::cout << "Count after filter:  " << gridLayer_->GetFeatureCount() << std::endl;
+  PJ * P = proj_create(C, "+proj=utm +zone=35 +datum=WGS84 +type=crs");
+  PJ * G = proj_crs_get_geodetic_crs(C, P);
+  PJ_AREA * A = NULL;
+  const char * const * options_proj = NULL;
+  PJ * G2P = proj_create_crs_to_crs_from_pj(C, G, P, A, options_proj);
+
+  // 10 km Grids
+  OGRLayer * gridLayer_ = poDS->GetLayerByName("grid");
+
+  //  std::cout << "Count before filter:  " << gridLayer_->GetFeatureCount() << std::endl;
+  //  gridLayer_->SetAttributeFilter("MGRS_10 LIKE '35TPF%'");
+  //  std::cout << "Count after filter:  " << gridLayer_->GetFeatureCount() << std::endl;
 
   nlohmann::json extracts = nlohmann::json::array();
+  size_t counter = 0;
   for (auto & feat : gridLayer_) {
+    if (counter >= 500) {
+      break;
+    }
     nlohmann::json polygon_json = nlohmann::json::array({});
     nlohmann::json polygon_json2 = nlohmann::json::array({});
     OGRGeometry * geometry = feat->GetGeometryRef();
-    OGRMultiPolygon * multiPolygon = geometry->toMultiPolygon();
-    for (OGRPolygon * polygon : multiPolygon) {
-      for (OGRLinearRing * linearring : polygon) {
-        for (const OGRPoint & point : linearring) {
-          nlohmann::json point_json = nlohmann::json::array({point.getX(), point.getY()});
-          polygon_json.push_back(point_json);
-        }
+    //    std::cout << geometry->getGeometryName() << std::endl;
+    //    OGRMultiPolygon * multiPolygon = geometry->toMultiPolygon();
+    OGRPolygon * polygon = geometry->toPolygon();
+    //    for (OGRPolygon * polygon : multiPolygon) {
+    for (OGRLinearRing * linearring : polygon) {
+      for (const OGRPoint & point : linearring) {
+        PJ_COORD c_in;
+        c_in.lpzt.z = 0.0;
+        c_in.lpzt.t = HUGE_VAL;  // important only for time-dependent projections
+        c_in.lp.lam = point.getX();
+        c_in.lp.phi = point.getY();
+        //        std::cout << "X: " << std::setprecision(12) << c_in.lp.phi <<  std::endl;
+        //        std::cout << "Y: " << std::setprecision(12) << c_in.lp.lam <<  std::endl;
+        PJ_COORD c_out = proj_trans(G2P, PJ_INV, c_in);
+        //        std::cout << "lat: " << std::setprecision(12) << c_out.enu.n <<  std::endl;
+        //        std::cout << "lon: " << std::setprecision(12) << c_out.enu.e << "\n" << std::endl;
+
+        nlohmann::json point_json = nlohmann::json::array({c_out.enu.e, c_out.enu.n});
+        polygon_json.push_back(point_json);
       }
     }
+    counter++;
+    //    }
     polygon_json2.push_back(polygon_json);
-    std::string map_name = "lanelet2_map_";
-    map_name +=  feat->GetFieldAsString("MGRS_10");
-    map_name += ".pbf";
+    std::string map_name = "lanelet2_map_35TPF_";
+    map_name += feat->GetFieldAsString("id");
+    //        map_name +=  std::to_string(counter);
+    map_name += ".osm";
     nlohmann::json extract({
       {"output", map_name},
-      {"output_format", "pbf"},
+      {"output_format", "osm"},
       {"description", "optional description"},
       {"polygon", polygon_json2},
     });
@@ -85,14 +99,18 @@ Lanelet2DivideJson::Lanelet2DivideJson(const rclcpp::NodeOptions & options) : No
   nlohmann::json j;
   j["extracts"] = extracts;
   j["directory"] = save_directory;
-
-
-  std::ofstream o(save_directory + "test_config.json");
+    
+  std::ofstream o(save_directory + "test_config2.json");
   o << std::setw(4) << j << std::endl;
+
+  /* Clean up */
+  proj_destroy(P);
+  proj_destroy(G);
+  proj_destroy(G2P);
+  proj_context_destroy(C); /* may be omitted in the single threaded case */
 
   rclcpp::shutdown();
 }
-
 
 }  // namespace lanelet2_divide
 
