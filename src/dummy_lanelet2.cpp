@@ -6,7 +6,12 @@
 
 #include "lanelet2_io/Io.h"
 #include "lanelet2_projection/UTM.h"
-#include <lanelet2_io/io_handlers/Writer.h>
+#include "ogrsf_frmts.h"
+#include "osmium/io/reader.hpp"
+#include "osmium/io/writer.hpp"
+
+#include <nlohmann/json.hpp>
+
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_core/geometry/Area.h>
 #include <lanelet2_core/geometry/Lanelet.h>
@@ -16,16 +21,15 @@
 #include <lanelet2_core/primitives/Point.h>
 #include <lanelet2_core/primitives/Polygon.h>
 #include <lanelet2_core/utility/Units.h>
+#include <lanelet2_io/io_handlers/Writer.h>
+#include <ogr_feature.h>
 
-#include "osmium/io/reader.hpp"
-#include "osmium/io/writer.hpp"
-
+#include <fstream>
 
 namespace dummy_lanelet2
 {
 
-DummyLanelet2::DummyLanelet2(const rclcpp::NodeOptions & options)
-: Node("dummy_lanelet2", options)
+DummyLanelet2::DummyLanelet2(const rclcpp::NodeOptions & options) : Node("dummy_lanelet2", options)
 {
   this->declare_parameter("origin_lat", 0.0);
   this->declare_parameter("origin_lon", 0.0);
@@ -41,24 +45,23 @@ DummyLanelet2::DummyLanelet2(const rclcpp::NodeOptions & options)
   lanelet::projection::UtmProjector proj((lanelet::Origin(gps_point)));
   lanelet::LaneletMap map;
 
-
   lanelet::Lanelet lanelet;
   lanelet.setId(45);
-  for (int j=0; j<2; j++) {
+  for (int j = 0; j < 2; j++) {
     lanelet::LineString3d ls;
     ls.setId(j);
-    for (int i=0; i<=20; i++) {
-      if (j==0) {
-        lanelet::Point3d p1(lanelet::utils::getId(), 10, i*10, 10);
+    for (int i = 0; i <= 20; i++) {
+      if (j == 0) {
+        lanelet::Point3d p1(lanelet::utils::getId(), 10, i * 10, 10);
         ls.push_back(p1);
-      } else if (j==1) {
-        lanelet::Point3d p1(lanelet::utils::getId(), 12, i*10, 10);
+      } else if (j == 1) {
+        lanelet::Point3d p1(lanelet::utils::getId(), 12, i * 10, 10);
         ls.push_back(p1);
       }
     }
-    if (j==0) {
+    if (j == 0) {
       lanelet.setLeftBound(ls);
-    } else if (j==1) {
+    } else if (j == 1) {
       lanelet.setRightBound(ls);
     }
   }
@@ -74,13 +77,11 @@ DummyLanelet2::DummyLanelet2(const rclcpp::NodeOptions & options)
   lanelet::write(save_string, map, proj);
 
 
-
-
   rclcpp::shutdown();
 }
 
-}  // namespace lanelet2_divider
 
+}  // namespace dummy_lanelet2
 
 #include "rclcpp_components/register_node_macro.hpp"
 RCLCPP_COMPONENTS_REGISTER_NODE(dummy_lanelet2::DummyLanelet2)

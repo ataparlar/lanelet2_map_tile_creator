@@ -28,7 +28,7 @@ Lanelet2DivideJson::Lanelet2DivideJson(const rclcpp::NodeOptions & options)
 
   GDALDataset * poDS;
   poDS = (GDALDataset *)GDALOpenEx(
-    "//home/ataparlar/projects/qgis/lanelet2_divider_project/data/35t_100m_small.gpkg",
+    "/home/ataparlar/projects/qgis/lanelet2_divider_project/data/35t_5km_divided.gpkg",
     GDAL_OF_VECTOR, NULL, NULL, NULL);
   if (poDS == NULL) {
     printf("Open failed.\n");
@@ -44,7 +44,7 @@ Lanelet2DivideJson::Lanelet2DivideJson(const rclcpp::NodeOptions & options)
   PJ * G2P = proj_create_crs_to_crs_from_pj(C, G, P, A, options_proj);
 
   // 10 km Grids
-  OGRLayer * gridLayer_ = poDS->GetLayerByName("grid");
+  OGRLayer * gridLayer_ = poDS->GetLayerByName("35t_5km_divided");
 
   //  std::cout << "Count before filter:  " << gridLayer_->GetFeatureCount() << std::endl;
   //  gridLayer_->SetAttributeFilter("MGRS_10 LIKE '35TPF%'");
@@ -100,7 +100,7 @@ Lanelet2DivideJson::Lanelet2DivideJson(const rclcpp::NodeOptions & options)
   j["extracts"] = extracts;
   j["directory"] = save_directory;
     
-  std::ofstream o(save_directory + "test_config2.json");
+  std::ofstream o(save_directory + "52100m_dummy_divide.json");
   o << std::setw(4) << j << std::endl;
 
   /* Clean up */

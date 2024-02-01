@@ -12,6 +12,7 @@ find_package(GDAL REQUIRED)
 find_package(Osmium REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(PROJ REQUIRED)
+find_package(GeographicLib REQUIRED)
 
 include_directories(include
         ${OSMIUM_INCLUDE_DIRS}
@@ -22,10 +23,12 @@ include_directories(include
 
 set(DUMMY_LANELET2_LIB_SRC
         src/dummy_lanelet2.cpp
+        src/dynamic_lanelet2_config_metadata_creator_for_autoware.cpp
         src/lanelet2_divide_json.cpp)
 
 set(DUMMY_LANELET2_LIB_HEADERS
         include/dummy_lanelet2/dummy_lanelet2.hpp
+        include/dynamic_lanelet2_config_metadata_creator_for_autoware/dynamic_lanelet2_config_metadata_creator_for_autoware.hpp
         include/lanelet2_divide_json/lanelet2_divide_json.hpp)
 
 
@@ -37,6 +40,7 @@ target_link_libraries(${PROJECT_NAME}
         ${GDAL_LIBRARIES}
         ${NLOHMANN_JSON_LIBRARIES}
         PROJ::proj
+        ${GeographicLib_LIBRARIES}
         ${lanelet2_LIBRARIES})
 
 #target_compile_options(${PROJECT_NAME} PRIVATE
@@ -64,6 +68,9 @@ rclcpp_components_register_node(${PROJECT_NAME}
 rclcpp_components_register_node(${PROJECT_NAME}
         PLUGIN "lanelet2_divide::Lanelet2DivideJson"
         EXECUTABLE lanelet2_divide_json_exe)
+rclcpp_components_register_node(${PROJECT_NAME}
+        PLUGIN "dynamic_lanelet2_config_metadata_creator::DynamicLanelet2ConfigMetadataCreator"
+        EXECUTABLE dynamic_lanelet2_config_metadata_creator_exe)
 
 if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)

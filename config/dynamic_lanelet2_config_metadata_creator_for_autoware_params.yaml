@@ -1,0 +1,4 @@
+/*:
+  ros__parameters:
+    mgrs_grid: 35TPF
+    lanelet2_map_path: /home/ataparlar/data/autoware/dummy_divided_2/lanelet2_map.osm
