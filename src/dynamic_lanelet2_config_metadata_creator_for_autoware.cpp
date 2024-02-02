@@ -63,21 +63,15 @@ DynamicLanelet2ConfigMetadataCreator::DynamicLanelet2ConfigMetadataCreator(
     exit(1);
   }
 
-  for (int iLayer = 0; iLayer < poDS->GetLayerCount(); iLayer++) {
-    OGRLayer * poLayer = poDS->GetLayer(iLayer);
+  OGRLayer * line_layer = poDS->GetLayerByName("lines");
 
-    OGRFeature * poFeature;
-    while ((poFeature = poLayer->GetNextFeature()) != NULL) {
-      OGRGeometry * geometry = poFeature->GetGeometryRef();
-      std::cout << "\n" << geometry->getGeometryName() << std::endl;
-      
-      OGRGeometryCollection * geometryCollection = geometry->toGeometryCollection();
-      for (auto smth : geometryCollection) {
-        std::cout << "\t" << smth->getGeometryName() << std::endl;  // LINESTRING
-      }
-//      OGRFeature::DestroyFeature(poFeature);
-    }
+  OGRFeature * poFeature;
+  while ((poFeature = line_layer->GetNextFeature()) != NULL) {
+    OGRGeometry * geometry = poFeature->GetGeometryRef();
+    std::cout << "geometry.getName(): " << geometry->getGeometryName() << std::endl;
+//    geometry->Intersects()    REACH THE INTERSECTED GRID POLYGON WITH THIS
   }
+  OGRFeature::DestroyFeature(poFeature);
 
   rclcpp::shutdown();
 }
