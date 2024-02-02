@@ -50,28 +50,91 @@ DynamicLanelet2ConfigMetadataCreator::DynamicLanelet2ConfigMetadataCreator(
   double x, y, origin_lat, origin_lon;
   GeographicLib::MGRS::Reverse(mgrs_grid, zone, northp, x, y, prec);
   GeographicLib::UTMUPS::Reverse(zone, northp, x, y, origin_lat, origin_lon);
+  double origin_x_35tpf = x - 50000;
+  double origin_y_35tpf = y - 50000;
 
   lanelet::projection::UtmProjector projector(
     lanelet::Origin({origin_lat, origin_lon}));  // we will go into details later
   lanelet::LaneletMapPtr map = load(lanelet2_map_path, projector);
 
+  // Create a temp shp for identifying grids.
+  const char *pszDriverName = "GPKG";
+  GDALDriver *poDriver;
   GDALAllRegister();
-  GDALDataset * poDS;
-  poDS = (GDALDataset *)GDALOpenEx(lanelet2_map_path.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL);
-  if (poDS == NULL) {
+  poDriver = GetGDALDriverManager()->GetDriverByName(pszDriverName );
+  if( poDriver == NULL )
+  {
+    printf( "%s driver not available.\n", pszDriverName );
+    exit( 1 );
+  }
+  GDALDataset *poDS;
+  poDS = poDriver->Create( "point_out.gpkg", 0, 0, 0, GDT_Unknown, NULL );
+  if( poDS == NULL )
+  {
+    printf( "Creation of output file failed.\n" );
+    exit( 1 );
+  }
+  OGRLayer *gridLayer;
+  gridLayer = poDS->CreateLayer( "5km_grid", NULL, wkbPolygon, NULL );
+  if( gridLayer == NULL )
+  {
+    printf( "Layer creation failed.\n" );
+    exit( 1 );
+  }
+  OGRFieldDefn oField( "Number", OFTInteger );
+
+  if( gridLayer->CreateField( &oField ) != OGRERR_NONE )
+  {
+    printf( "Creating Number field failed.\n" );
+    exit( 1 );
+  }
+  double point_x, point_y;
+  int number = 1;
+  while( number <= 400 )
+  {
+    OGRFeature *gridFeature;
+
+    gridFeature = OGRFeature::CreateFeature( gridLayer->GetLayerDefn() );
+    gridFeature->SetField( "Number", number );
+
+    OGRPoint pt;
+    pt.setX( point_x );
+    pt.setY( point_y );
+
+    OGRPolygon polygon;
+    for (int i = 0; i<4; i++) {
+      
+    }
+
+    gridFeature->SetGeometry( &pt );
+
+    if( gridLayer->CreateFeature( gridFeature ) != OGRERR_NONE )
+    {
+      printf( "Failed to create feature in shapefile.\n" );
+      exit( 1 );
+    }
+    number++;
+    OGRFeature::DestroyFeature( gridFeature );
+  }
+
+
+
+
+
+  // Read lanelet2.osm
+  GDALDataset * poDS_lanelet2;
+  poDS_lanelet2 = (GDALDataset *)GDALOpenEx(lanelet2_map_path.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL);
+  if (poDS_lanelet2 == NULL) {
     printf("Open failed.\n");
     exit(1);
   }
-
-  OGRLayer * line_layer = poDS->GetLayerByName("lines");
-
-  OGRFeature * poFeature;
-  while ((poFeature = line_layer->GetNextFeature()) != NULL) {
-    OGRGeometry * geometry = poFeature->GetGeometryRef();
-    std::cout << "geometry.getName(): " << geometry->getGeometryName() << std::endl;
+  OGRLayer * line_layer_lanelet2 = poDS_lanelet2->GetLayerByName("lines");
+  OGRFeature * poFeature_lanelet2;
+  while ((poFeature_lanelet2 = line_layer_lanelet2->GetNextFeature()) != NULL) {
+    OGRGeometry * geometry = poFeature_lanelet2->GetGeometryRef();
 //    geometry->Intersects()    REACH THE INTERSECTED GRID POLYGON WITH THIS
   }
-  OGRFeature::DestroyFeature(poFeature);
+  OGRFeature::DestroyFeature(poFeature_lanelet2);
 
   rclcpp::shutdown();
 }
