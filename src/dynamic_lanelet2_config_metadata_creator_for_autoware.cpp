@@ -26,22 +26,8 @@ DynamicLanelet2ConfigMetadataCreator::DynamicLanelet2ConfigMetadataCreator(
 {
   this->declare_parameter("mgrs_grid", "35TPF");
   this->declare_parameter("lanelet2_map_path", "/");
-  //  this->declare_parameter("lanelet2_map_origin_lat", 0.0);
-  //  this->declare_parameter("lanelet2_map_origin_lon", 0.0);
-  //  this->declare_parameter("lanelet2_map_origin_alt", 0.0);
   mgrs_grid = this->get_parameter("mgrs_grid").as_string();
   lanelet2_map_path = this->get_parameter("lanelet2_map_path").as_string();
-  //  lanelet2_map_origin_lat = this->get_parameter("lanelet2_map_origin_lat").as_double;
-  //  lanelet2_map_origin_lon = this->get_parameter("lanelet2_map_origin_lon").as_double;
-  //  lanelet2_map_origin_alt = this->get_parameter("lanelet2_map_origin_alt").as_double;
-
-  // create the map tile grids within an MGRS grid
-
-  // load lanelet2
-
-  // find intersected grids with lanelet2 map
-
-  // note the polygon vertices.
 
   int zone, prec;
   bool northp;
@@ -147,10 +133,25 @@ DynamicLanelet2ConfigMetadataCreator::DynamicLanelet2ConfigMetadataCreator(
   }
   OGRLayer * line_layer_lanelet2 = poDS_lanelet2->GetLayerByName("lines");
   OGRFeature * poFeature_lanelet2;
+
+  size_t true_counter;
+  size_t false_counter;
   while ((poFeature_lanelet2 = line_layer_lanelet2->GetNextFeature()) != NULL) {
-    OGRGeometry * geometry = poFeature_lanelet2->GetGeometryRef();
-    //    geometry->Intersects()    REACH THE INTERSECTED GRID POLYGON WITH THIS
+    OGRGeometry * geometry_lanelet2 = poFeature_lanelet2->GetGeometryRef();
+    for (auto & feature : gridLayer) {
+      feature->GetGeometryRef();
+      OGRGeometry * geometry_polygon = feature->GetGeometryRef();
+
+      if (geometry_lanelet2->Intersects(geometry_polygon)) {
+        true_counter ++;
+      } else {
+        false_counter ++;
+      }
+
+    }
   }
+  std::cout << "true_counter: " << true_counter << std::endl;
+  std::cout << "false_counter: " << false_counter << std::endl;
   OGRFeature::DestroyFeature(poFeature_lanelet2);
 
   rclcpp::shutdown();
