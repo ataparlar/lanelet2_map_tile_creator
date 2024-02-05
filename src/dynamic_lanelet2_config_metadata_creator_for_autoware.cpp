@@ -35,95 +35,134 @@ DynamicLanelet2ConfigMetadataCreator::DynamicLanelet2ConfigMetadataCreator(
   //  lanelet2_map_origin_lon = this->get_parameter("lanelet2_map_origin_lon").as_double;
   //  lanelet2_map_origin_alt = this->get_parameter("lanelet2_map_origin_alt").as_double;
 
+  // create the map tile grids within an MGRS grid
+
   // load lanelet2
 
-  // find the point at most west, south, east and north. These are boundaries.
-
-  // divide the 100km grids into 5km
-
-  // find corresponding 5km grids with lanelet2 map.
+  // find intersected grids with lanelet2 map
 
   // note the polygon vertices.
 
   int zone, prec;
   bool northp;
-  double x, y, origin_lat, origin_lon;
-  GeographicLib::MGRS::Reverse(mgrs_grid, zone, northp, x, y, prec);
-  GeographicLib::UTMUPS::Reverse(zone, northp, x, y, origin_lat, origin_lon);
-  double origin_x_35tpf = x - 50000;
-  double origin_y_35tpf = y - 50000;
+  double origin_x, origin_y, origin_lat, origin_lon, x, y;
+  GeographicLib::MGRS::Reverse(mgrs_grid, zone, northp, origin_x, origin_y, prec);
+  GeographicLib::UTMUPS::Reverse(zone, northp, origin_x, origin_y, origin_lat, origin_lon);
+  x = origin_x - 50000;
+  y = origin_y - 50000;
 
   lanelet::projection::UtmProjector projector(
     lanelet::Origin({origin_lat, origin_lon}));  // we will go into details later
   lanelet::LaneletMapPtr map = load(lanelet2_map_path, projector);
 
   // Create a temp shp for identifying grids.
-  const char *pszDriverName = "GPKG";
-  GDALDriver *poDriver;
+  const char * pszDriverName = "GPKG";
+  GDALDriver * poDriver;
   GDALAllRegister();
-  poDriver = GetGDALDriverManager()->GetDriverByName(pszDriverName );
-  if( poDriver == NULL )
-  {
-    printf( "%s driver not available.\n", pszDriverName );
-    exit( 1 );
+  poDriver = GetGDALDriverManager()->GetDriverByName(pszDriverName);
+  if (poDriver == NULL) {
+    printf("%s driver not available.\n", pszDriverName);
+    exit(1);
   }
-  GDALDataset *poDS;
-  poDS = poDriver->Create( "point_out.gpkg", 0, 0, 0, GDT_Unknown, NULL );
-  if( poDS == NULL )
-  {
-    printf( "Creation of output file failed.\n" );
-    exit( 1 );
+  GDALDataset * poDS;
+  poDS = poDriver->Create("polygon_out.gpkg", 0, 0, 0, GDT_Unknown, NULL);
+  if (poDS == NULL) {
+    printf("Creation of output file failed.\n");
+    exit(1);
   }
-  OGRLayer *gridLayer;
-  gridLayer = poDS->CreateLayer( "5km_grid", NULL, wkbPolygon, NULL );
-  if( gridLayer == NULL )
-  {
-    printf( "Layer creation failed.\n" );
-    exit( 1 );
-  }
-  OGRFieldDefn oField( "Number", OFTInteger );
 
-  if( gridLayer->CreateField( &oField ) != OGRERR_NONE )
-  {
-    printf( "Creating Number field failed.\n" );
-    exit( 1 );
+
+
+
+
+  OGRSpatialReference oSRS;
+  std::string epsg_string;
+  if (northp) {
+    epsg_string = "EPSG:326";
+
+  } else {
+    epsg_string = "EPSG:327";
+
   }
-  double point_x, point_y;
+  epsg_string += std::to_string(zone);
+  char *pszWKT = NULL;
+  oSRS.exportToWkt( &pszWKT );
+  printf( "%s\n", pszWKT );
+  std::cout << "epsg_string: " << epsg_string << std::endl;
+  oSRS.SetWellKnownGeogCS( epsg_string.c_str() );
+//  std::cout << "oSRS.GetName(): " << oSRS.GetName() << std::endl;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  OGRLayer * gridLayer;
+  gridLayer = poDS->CreateLayer("5km_grid", &oSRS, wkbPolygon, &pszWKT);
+  if (gridLayer == NULL) {
+    printf("Layer creation failed.\n");
+    exit(1);
+  }
+  OGRFieldDefn oField("Number", OFTInteger);
+
+  if (gridLayer->CreateField(&oField) != OGRERR_NONE) {
+    printf("Creating Number field failed.\n");
+    exit(1);
+  }
+
   int number = 1;
-  while( number <= 400 )
-  {
-    OGRFeature *gridFeature;
+  for (int i = 0; i < 20; i++) {
+    for (int j = 0; j < 20; j++) {
+      OGRFeature * gridFeature;
 
-    gridFeature = OGRFeature::CreateFeature( gridLayer->GetLayerDefn() );
-    gridFeature->SetField( "Number", number );
+      gridFeature = OGRFeature::CreateFeature(gridLayer->GetLayerDefn());
+      gridFeature->SetField("Number", number);
 
-    OGRPoint pt;
-    pt.setX( point_x );
-    pt.setY( point_y );
+      OGRPoint pt1;
+      pt1.setX(x + (i * 5000));
+      pt1.setY(y + (j * 5000));
+      OGRPoint pt2;
+      pt2.setX(x + (i * 5000) + 5000);
+      pt2.setY(y + (j * 5000));
+      OGRPoint pt3;
+      pt3.setX(x + (i * 5000) + 5000);
+      pt3.setY(y + (j * 5000) + 5000);
+      OGRPoint pt4;
+      pt4.setX(x + (i * 5000));
+      pt4.setY(y + (j * 5000) + 5000);
 
-    OGRPolygon polygon;
-    for (int i = 0; i<4; i++) {
-      
+      OGRLinearRing ring;
+      ring.addPoint(&pt1);
+      ring.addPoint(&pt2);
+      ring.addPoint(&pt3);
+      ring.addPoint(&pt4);
+
+      OGRPolygon polygon;
+      polygon.addRing(&ring);
+
+      gridFeature->SetGeometry(&polygon);
+
+      if (gridLayer->CreateFeature(gridFeature) != OGRERR_NONE) {
+        printf("Failed to create feature in shapefile.\n");
+        exit(1);
+      }
+      number++;
+      OGRFeature::DestroyFeature(gridFeature);
     }
-
-    gridFeature->SetGeometry( &pt );
-
-    if( gridLayer->CreateFeature( gridFeature ) != OGRERR_NONE )
-    {
-      printf( "Failed to create feature in shapefile.\n" );
-      exit( 1 );
-    }
-    number++;
-    OGRFeature::DestroyFeature( gridFeature );
   }
-
-
-
-
 
   // Read lanelet2.osm
   GDALDataset * poDS_lanelet2;
-  poDS_lanelet2 = (GDALDataset *)GDALOpenEx(lanelet2_map_path.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL);
+  poDS_lanelet2 =
+    (GDALDataset *)GDALOpenEx(lanelet2_map_path.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL);
   if (poDS_lanelet2 == NULL) {
     printf("Open failed.\n");
     exit(1);
@@ -132,7 +171,7 @@ DynamicLanelet2ConfigMetadataCreator::DynamicLanelet2ConfigMetadataCreator(
   OGRFeature * poFeature_lanelet2;
   while ((poFeature_lanelet2 = line_layer_lanelet2->GetNextFeature()) != NULL) {
     OGRGeometry * geometry = poFeature_lanelet2->GetGeometryRef();
-//    geometry->Intersects()    REACH THE INTERSECTED GRID POLYGON WITH THIS
+    //    geometry->Intersects()    REACH THE INTERSECTED GRID POLYGON WITH THIS
   }
   OGRFeature::DestroyFeature(poFeature_lanelet2);
 
