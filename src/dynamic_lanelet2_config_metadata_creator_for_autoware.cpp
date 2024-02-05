@@ -70,40 +70,15 @@ DynamicLanelet2ConfigMetadataCreator::DynamicLanelet2ConfigMetadataCreator(
     printf("Creation of output file failed.\n");
     exit(1);
   }
-
-
-
-
-
+  
   OGRSpatialReference oSRS;
-  std::string epsg_string;
-  if (northp) {
-    epsg_string = "EPSG:326";
-
-  } else {
-    epsg_string = "EPSG:327";
-
+  std::string proj4_string = "+proj=utm +zone=" + std::to_string(zone) + " +datum=WGS84 +units=m +no_defs";
+  if (!northp) {
+    proj4_string += " +south";
   }
-  epsg_string += std::to_string(zone);
+  oSRS.importFromProj4(proj4_string.c_str());
   char *pszWKT = NULL;
   oSRS.exportToWkt( &pszWKT );
-  printf( "%s\n", pszWKT );
-  std::cout << "epsg_string: " << epsg_string << std::endl;
-  oSRS.SetWellKnownGeogCS( epsg_string.c_str() );
-//  std::cout << "oSRS.GetName(): " << oSRS.GetName() << std::endl;
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   OGRLayer * gridLayer;
   gridLayer = poDS->CreateLayer("5km_grid", &oSRS, wkbPolygon, &pszWKT);
