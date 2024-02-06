@@ -29,17 +29,9 @@ DynamicLanelet2ConfigMetadataCreator::DynamicLanelet2ConfigMetadataCreator(
   mgrs_grid = this->get_parameter("mgrs_grid").as_string();
   lanelet2_map_path = this->get_parameter("lanelet2_map_path").as_string();
 
-  int zone, prec;
-  bool northp;
-  double origin_x, origin_y, origin_lat, origin_lon, x, y;
-  GeographicLib::MGRS::Reverse(mgrs_grid, zone, northp, origin_x, origin_y, prec);
-  GeographicLib::UTMUPS::Reverse(zone, northp, origin_x, origin_y, origin_lat, origin_lon);
-  x = origin_x - 50000;
-  y = origin_y - 50000;
-
-  lanelet::projection::UtmProjector projector(
-    lanelet::Origin({origin_lat, origin_lon}));  // we will go into details later
-  lanelet::LaneletMapPtr map = load(lanelet2_map_path, projector);
+//  lanelet::projection::UtmProjector projector(
+//    lanelet::Origin({origin_lat, origin_lon}));  // we will go into details later
+//  lanelet::LaneletMapPtr map = load(lanelet2_map_path, projector);
 
   const char * pszDriverName = "GPKG";
   GDALDriver * poDriver;
@@ -72,19 +64,18 @@ DynamicLanelet2ConfigMetadataCreator::DynamicLanelet2ConfigMetadataCreator(
     printf("Creating Number field failed.\n");
     exit(1);
   }
+  std::cout << "grid layer created" << std::endl;
 
-  OGRLayer * lanelet2_layer;
-  lanelet2_layer = poDS->CreateLayer("lanelet2_layer", sourceSRS, wkbLineString, &pszWKT);
-  if (lanelet2_layer == NULL) {
-    printf("Layer creation failed.\n");
-    exit(1);
-  }
-  OGRFieldDefn oField_lanelet2("Number", OFTInteger);
-  if (lanelet2_layer->CreateField(&oField_lanelet2) != OGRERR_NONE) {
-    printf("Creating Number field for lanelet2 failed.\n");
-    exit(1);
-  }
 
+  int zone, prec;
+  bool northp;
+  double origin_x, origin_y, origin_lat, origin_lon, x, y;
+  GeographicLib::MGRS::Reverse(mgrs_grid, zone, northp, origin_x, origin_y, prec);
+  GeographicLib::UTMUPS::Reverse(zone, northp, origin_x, origin_y, origin_lat, origin_lon);
+  x = origin_x - 50000;
+  y = origin_y - 50000;
+
+  rclcpp::sleep_for(std::chrono::seconds(1));
   int number = 1;
   for (int i = 0; i < 20; i++) {
     for (int j = 0; j < 20; j++) {
@@ -128,7 +119,7 @@ DynamicLanelet2ConfigMetadataCreator::DynamicLanelet2ConfigMetadataCreator(
       GeographicLib::UTMUPS::Reverse(zone, northp, pt4_x, pt4_y, pt4_lat, pt4_lon);
       pt4.setX(pt4_lon);
       pt4.setY(pt4_lat);
-      
+
       OGRLinearRing ring;
       ring.addPoint(&pt1);
       ring.addPoint(&pt2);
@@ -149,13 +140,54 @@ DynamicLanelet2ConfigMetadataCreator::DynamicLanelet2ConfigMetadataCreator(
     }
   }
 
+  rclcpp::sleep_for(std::chrono::seconds(1));
+  auto* sourceSRS2 = new OGRSpatialReference();
+  sourceSRS2->importFromEPSG(4326);
+  char *pszWKT2 = NULL;
+  sourceSRS2->exportToWkt( &pszWKT2 );
 
-//  poDS_lanelet2->SetSpatialRef(targetSRS);
-//  std::cout << poDS->GetSpatialRef()->GetName() << std::endl;
+  std::cout << "before lanelet2 layer created" << std::endl;
 
 
 
 
+
+//
+//
+//  OGRLayer * gridLayer;
+//  gridLayer = poDS->CreateLayer("5km_grid", sourceSRS, wkbPolygon, &pszWKT);
+//  if (gridLayer == NULL) {
+//    printf("Layer creation failed.\n");
+//    exit(1);
+//  }
+
+
+
+  OGRLayer * lanelet2_layer;
+  lanelet2_layer = poDS->CreateLayer("lanelet2_layer", nullptr, wkbLineString, nullptr);
+//  lanelet2_layer->
+  std::cout << "before lanelet2 layer createdsdfsdfdsfsdfsdf" << std::endl;
+  if (lanelet2_layer == NULL) {
+    printf("Layer creation failed.\n");
+    exit(1);
+  }
+
+
+
+
+
+
+
+
+
+
+  OGRFieldDefn oField_lanelet2("Number", OFTInteger);
+  if (lanelet2_layer->CreateField(&oField_lanelet2) != OGRERR_NONE) {
+    printf("Creating Number field for lanelet2 failed.\n");
+    exit(1);
+  }
+
+  rclcpp::sleep_for(std::chrono::seconds(1));
   // Read lanelet2.osm
   GDALDataset * poDS_lanelet2;
   poDS_lanelet2 =
@@ -174,7 +206,26 @@ DynamicLanelet2ConfigMetadataCreator::DynamicLanelet2ConfigMetadataCreator(
   size_t false_counter = 0;
   while ((poFeature_lanelet2 = line_layer_lanelet2->GetNextFeature()) != NULL) {
     OGRGeometry * geometry_lanelet2 = poFeature_lanelet2->GetGeometryRef();
-    
+
+//    std::cout << "geometry_lanelet2 created" << std::endl;
+
+
+    for (auto & gridFeature : gridLayer) {
+
+      OGRGeometry * grid_geometry = gridFeature->GetGeometryRef();
+
+      if (grid_geometry->Intersects(geometry_lanelet2)){
+        true_counter++;
+      } else {
+        false_counter++;
+      }
+
+    }
+
+
+
+
+
     OGRLineString * linestring = geometry_lanelet2->toLineString();
 
     OGRFeature * lanelet2_feature;
@@ -204,7 +255,7 @@ DynamicLanelet2ConfigMetadataCreator::DynamicLanelet2ConfigMetadataCreator(
   std::cout << "false_counter: " << false_counter << std::endl;
   OGRFeature::DestroyFeature(poFeature_lanelet2);
 
-  rclcpp::shutdown();
+//  rclcpp::shutdown();
 }
 
 }  // namespace dynamic_lanelet2_config_metadata_creator
