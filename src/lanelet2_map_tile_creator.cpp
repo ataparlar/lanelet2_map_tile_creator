@@ -193,7 +193,10 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
   OGRLayer * line_layer_lanelet2 = poDS_lanelet2->GetLayerByName("lines");
   OGRFeature * poFeature_lanelet2;
 
-  std::vector<int> grid_numbers;
+  std::vector<long> grid_numbers;
+//  for (auto & gridFeature : gridLayer){
+//    grid_numbers.push_back(gridFeature->GetFID());
+//  }
   int counter = 1;
   size_t true_counter = 0;
   size_t false_counter = 0;
@@ -248,15 +251,18 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
 
       for (auto & gridFeature : gridLayer) {
         OGRGeometry * grid_geometry = gridFeature->GetGeometryRef();
-//        auto * grid_polygon = grid_geometry->toPolygon();
-
         OGRGeometry * lanelet2_geom_polygon = lanelet2_layer_poly_feature->GetGeometryRef();
-//        auto * lanelet2_polygon = lanelet2_geom_polygon->toPolygon();
+
         if (grid_geometry->Intersects(lanelet2_geom_polygon)) {
+//          grid_numbers.push_back(gridFeature->GetFID());
+          if (std::find(grid_numbers.begin(), grid_numbers.end(), gridFeature->GetFID()) == grid_numbers.end()) {
+            grid_numbers.push_back(gridFeature->GetFID());
+          }
           true_counter++;
         } else {
           false_counter++;
         }
+
       }
 
       OGRFeature::DestroyFeature(lanelet2_layer_poly_feature);
@@ -291,13 +297,51 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
     counter++;
     OGRFeature::DestroyFeature(lanelet2_feature);
 
-
-
   }
   std::cout << grid_numbers.size() << std::endl;
   std::cout << "true_counter: " << true_counter << std::endl;
   std::cout << "false_counter: " << false_counter << std::endl;
   OGRFeature::DestroyFeature(poFeature_lanelet2);
+
+//  for (long grid_number : grid_numbers) {
+//    for (int i=1; i<=gridLayer->GetFeatureCount(); i++) {
+//      if (grid_number != gridLayer->GetFeature(i)->GetFID()) {
+//        gridLayer->DeleteFeature(gridLayer->GetFeature(i)->GetFID());
+//      }
+//    }
+//  }
+
+  std::vector<long> remove_vec;
+  std::vector<long> whole_vec;
+  for (long i=0; i<gridLayer->GetFeatureCount(); i++) {
+    whole_vec.push_back(i);
+  }
+  for (long number_ : whole_vec) {
+    for (long grid_number : grid_numbers) {
+      if (number_ != grid_number) {
+//        remove_vec.push_back(number_);
+        if (std::find(remove_vec.begin(), remove_vec.end(), number_) == remove_vec.end()) {
+          remove_vec.push_back(number_);
+        }
+      }
+    }
+  }
+  std::cout << "remove_vec size: " << remove_vec.size() << std::endl;
+
+  for (long remove_number : remove_vec) {
+    gridLayer->DeleteFeature(remove_number);
+  }
+
+//  for (auto & gridFeature : gridLayer) {
+//    for (long grid_number : grid_numbers) {
+//      if (gridFeature->GetFID() != grid_number) {
+//        gridLayer->DeleteFeature(gridFeature->GetFID());
+//        std::cout << grid_number << std::endl;
+//      }
+//    }
+//  }
+
+
 
   rclcpp::shutdown();
 }
