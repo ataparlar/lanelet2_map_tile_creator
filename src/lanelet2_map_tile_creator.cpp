@@ -2,7 +2,7 @@
 // Created by ataparlar on 01.02.2024.
 //
 
-#include "dynamic_lanelet2_config_metadata_creator_for_autoware/dynamic_lanelet2_config_metadata_creator_for_autoware.hpp"
+#include "lanelet2_map_tile_creator/lanelet2_map_tile_creator.hpp"
 
 #include "lanelet2_io/Io.h"
 #include "lanelet2_projection/UTM.h"
@@ -17,10 +17,10 @@
 
 #include <fstream>
 
-namespace dynamic_lanelet2_config_metadata_creator
+namespace lanelet2_map_tile_creator
 {
 
-DynamicLanelet2ConfigMetadataCreator::DynamicLanelet2ConfigMetadataCreator(
+Lanelet2MapTileCreator::Lanelet2MapTileCreator(
   const rclcpp::NodeOptions & options)
 : Node("dynamic_lanelet2_config_metadata_creator", options)
 {
@@ -262,4 +262,4 @@ DynamicLanelet2ConfigMetadataCreator::DynamicLanelet2ConfigMetadataCreator(
 
 #include "rclcpp_components/register_node_macro.hpp"
 RCLCPP_COMPONENTS_REGISTER_NODE(
-  dynamic_lanelet2_config_metadata_creator::DynamicLanelet2ConfigMetadataCreator)
+  lanelet2_map_tile_creator::Lanelet2MapTileCreator)

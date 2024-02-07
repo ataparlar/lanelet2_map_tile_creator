@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(dummy_lanelet2)
+project(lanelet2_map_tile_creator)
 
 add_compile_options(-Wall -Wextra -Wpedantic)
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
@@ -22,14 +22,10 @@ include_directories(include
         ${lanelet2_INCLUDE_DIRS})
 
 set(DUMMY_LANELET2_LIB_SRC
-        src/dummy_lanelet2.cpp
-        src/dynamic_lanelet2_config_metadata_creator_for_autoware.cpp
-        src/lanelet2_divide_json.cpp)
+        src/lanelet2_map_tile_creator.cpp)
 
 set(DUMMY_LANELET2_LIB_HEADERS
-        include/dummy_lanelet2/dummy_lanelet2.hpp
-        include/dynamic_lanelet2_config_metadata_creator_for_autoware/dynamic_lanelet2_config_metadata_creator_for_autoware.hpp
-        include/lanelet2_divide_json/lanelet2_divide_json.hpp)
+        include/lanelet2_map_tile_creator/lanelet2_map_tile_creator.hpp)
 
 
 ament_auto_add_library(${PROJECT_NAME} SHARED
@@ -63,14 +59,8 @@ target_link_libraries(${PROJECT_NAME}
 # C++-only options
 
 rclcpp_components_register_node(${PROJECT_NAME}
-        PLUGIN "dummy_lanelet2::DummyLanelet2"
-        EXECUTABLE ${PROJECT_NAME}_exe)
-rclcpp_components_register_node(${PROJECT_NAME}
-        PLUGIN "lanelet2_divide::Lanelet2DivideJson"
-        EXECUTABLE lanelet2_divide_json_exe)
-rclcpp_components_register_node(${PROJECT_NAME}
-        PLUGIN "dynamic_lanelet2_config_metadata_creator::DynamicLanelet2ConfigMetadataCreator"
-        EXECUTABLE dynamic_lanelet2_config_metadata_creator_exe)
+        PLUGIN "lanelet2_map_tile_creator::Lanelet2MapTileCreator"
+        EXECUTABLE lanelet2_map_tile_creator_exe)
 
 if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)
