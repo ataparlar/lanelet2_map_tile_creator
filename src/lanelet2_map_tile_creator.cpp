@@ -255,8 +255,8 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
 
     std::string metadata_object;
     metadata_object += std::to_string(feature->GetFID()) + ".osm:\n";
-    metadata_object += "\tid: " + std::to_string(feature->GetFID()) + "\n";
-    metadata_object += "\tmgrs_code: \"" + mgrs_grid + "\"\n";
+    metadata_object += "  id: " + std::to_string(feature->GetFID()) + "\n";
+    metadata_object += "  mgrs_code: \"" + mgrs_grid + "\"\n";
 
     OGRGeometry * geometry = feature->GetGeometryRef();
     OGRPolygon * polygon = geometry->toPolygon();
@@ -264,12 +264,12 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
     bool first_point_of_polygon = true;
     for (OGRLinearRing * linearring : polygon) {
       for (const OGRPoint & point : linearring) {
-        nlohmann::json point_json = nlohmann::json::array({point.getY(), point.getX()});
+        nlohmann::json point_json = nlohmann::json::array({point.getX(), point.getY()});
         polygon_json.push_back(point_json);
 
         if (first_point_of_polygon) {
-          metadata_object += "\torigin_lat: " + std::to_string(point.getY()) + "\n";
-          metadata_object += "\torigin_lon: " + std::to_string(point.getX()) + "\n";
+          metadata_object += "  origin_lat: " + std::to_string(point.getY()) + "\n";
+          metadata_object += "  origin_lon: " + std::to_string(point.getX()) + "\n";
           first_point_of_polygon = false;
         }
       }
@@ -278,9 +278,7 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
     metadata << metadata_object;
 
     polygon_json2.push_back(polygon_json);
-    std::string map_name = "lanelet2_map_" + mgrs_grid + "_";
-    map_name += std::to_string(feature->GetFID());
-    map_name += ".osm";
+    std::string map_name = std::to_string(feature->GetFID()) + ".osm";
     nlohmann::json extract({
       {"output", map_name},
       {"output_format", "osm"},
