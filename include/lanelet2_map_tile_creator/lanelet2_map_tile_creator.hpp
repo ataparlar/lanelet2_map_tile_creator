@@ -19,12 +19,29 @@ public:
   // params
   std::string mgrs_grid;
   std::string lanelet2_map_path;
+  double grid_edge_size;
 //  double lanelet2_map_origin_lat;
 //  double lanelet2_map_origin_lon;
 //  double lanelet2_map_origin_alt;
 
 private:
 
+
+
+  template<typename T>
+  std::vector<T> vectorDifference(const std::vector<T> &v1, const std::vector<T> &v2){
+    //Make the result initially equal to v1
+    std::vector<T> result = v1;
+
+    //Remove the elements in v2 from the result
+    for(const T &element: v2){
+      const auto it = std::find(result.begin(), result.end(), element);
+      if(it != result.end()){
+        result.erase(it);
+      }
+    }
+    return result;
+  }
 
 };
 }
