@@ -1,5 +1,5 @@
 /*:
   ros__parameters:
     mgrs_grid: 35TPF
-    lanelet2_map_path: /home/ataparlar/data/autoware/dummy_divided_2/lanelet2_map.osm
-    grid_edge_size: 5000.0  # in meters
+    lanelet2_map_path: /home/ataparlar/data/gis_data/lanelet2_map_tile_creator/maps/lanelet2_map.osm
+    grid_edge_size: 50.0  # in meters

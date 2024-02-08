@@ -30,10 +30,6 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
   lanelet2_map_path = this->get_parameter("lanelet2_map_path").as_string();
   grid_edge_size = this->get_parameter("grid_edge_size").as_double();
 
-  //  lanelet::projection::UtmProjector projector(
-  //    lanelet::Origin({origin_lat, origin_lon}));  // we will go into details later
-  //  lanelet::LaneletMapPtr map = load(lanelet2_map_path, projector);
-
   const char * pszDriverName = "GPKG";
   GDALDriver * poDriver;
   GDALAllRegister();
@@ -77,6 +73,7 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
   x = origin_x - 50000;
   y = origin_y - 50000;
 
+  nlohmann::json extracts = nlohmann::json::array();
   int number = 1;
   double grid_count = 100000 / grid_edge_size;
   for (int i = 0; i < grid_count; i++) {
@@ -197,11 +194,10 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
 
   OGRLineString linestring_lanelet2_whole;
 
-//  OGRLineString * ls_to_combine;
+  //  OGRLineString * ls_to_combine;
   while ((poFeature_lanelet2 = line_layer_lanelet2->GetNextFeature()) != NULL) {
     OGRGeometry * geometry_lanelet2 = poFeature_lanelet2->GetGeometryRef();
     OGRLineString * linestring_lanelet2 = geometry_lanelet2->toLineString();
-
 
     for (const OGRPoint & point_lanelet2 : linestring_lanelet2) {
       OGRPoint new_pt;
@@ -210,7 +206,6 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
 
       linestring_lanelet2_whole.addPoint(&new_pt);
     }
-
 
     // lanelet2 linestring part
 
@@ -238,10 +233,10 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
     OGRFeature::DestroyFeature(lanelet2_feature);
   }
 
-
-
   gridLayer->SetSpatialFilter(&linestring_lanelet2_whole);
-  std::cout << "gridLayer size: " << gridLayer->GetFeatureCount() << std::endl;
+
+  std::ofstream metadata(
+    "/home/ataparlar/data/gis_data/lanelet2_map_tile_creator/maps/tmp_lanelet2_map_metadata.yaml");
 
   for (auto & feature : gridLayer) {
     OGRFeature * new_feature;
@@ -254,10 +249,54 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
       printf("Failed to create lanelet2_feature in shapefile.\n");
       exit(1);
     }
+
+    nlohmann::json polygon_json = nlohmann::json::array({});
+    nlohmann::json polygon_json2 = nlohmann::json::array({});
+
+    std::string metadata_object;
+    metadata_object += std::to_string(feature->GetFID()) + ".osm:\n";
+    metadata_object += "\tid: " + std::to_string(feature->GetFID()) + "\n";
+    metadata_object += "\tmgrs_code: \"" + mgrs_grid + "\"\n";
+
+    OGRGeometry * geometry = feature->GetGeometryRef();
+    OGRPolygon * polygon = geometry->toPolygon();
+    //    for (OGRPolygon * polygon : multiPolygon) {
+    bool first_point_of_polygon = true;
+    for (OGRLinearRing * linearring : polygon) {
+      for (const OGRPoint & point : linearring) {
+        nlohmann::json point_json = nlohmann::json::array({point.getY(), point.getX()});
+        polygon_json.push_back(point_json);
+
+        if (first_point_of_polygon) {
+          metadata_object += "\torigin_lat: " + std::to_string(point.getY()) + "\n";
+          metadata_object += "\torigin_lon: " + std::to_string(point.getX()) + "\n";
+          first_point_of_polygon = false;
+        }
+      }
+    }
+
+    metadata << metadata_object;
+
+    polygon_json2.push_back(polygon_json);
+    std::string map_name = "lanelet2_map_" + mgrs_grid + "_";
+    map_name += std::to_string(feature->GetFID());
+    map_name += ".osm";
+    nlohmann::json extract({
+      {"output", map_name},
+      {"output_format", "osm"},
+      {"description", "optional description"},
+      {"polygon", polygon_json2},
+    });
+    extracts.push_back(extract);
   }
 
   OGRFeature::DestroyFeature(poFeature_lanelet2);
 
+  nlohmann::json j;
+  j["extracts"] = extracts;
+  j["directory"] = "/home/ataparlar/data/gis_data/lanelet2_map_tile_creator/maps/";
+  std::ofstream o("/home/ataparlar/data/gis_data/lanelet2_map_tile_creator/maps/test_config2.json");
+  o << std::setw(4) << j << std::endl;
 
   rclcpp::shutdown();
 }
