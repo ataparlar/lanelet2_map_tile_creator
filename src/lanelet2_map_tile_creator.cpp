@@ -212,71 +212,6 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
     }
 
 
-//    if (counter % 2 == 0) {
-//      OGRFeature * lanelet2_layer_poly_feature;
-//      lanelet2_layer_poly_feature = OGRFeature::CreateFeature(lanelet2_layer_poly->GetLayerDefn());
-//      lanelet2_layer_poly_feature->SetField("Number", counter);
-//
-//      OGRLinearRing ring_lanelet2_poly;
-//      OGRPolygon polygon_lanelet2;
-//
-//      bool first_point = true;
-//      OGRPoint first_point_in_ls;
-//
-//      for (const OGRPoint & point_lanelet2 : linestring_lanelet2) {
-//        if (first_point) {
-//          first_point_in_ls.setX(point_lanelet2.getX());
-//          first_point_in_ls.setY(point_lanelet2.getY());
-//
-//          first_point = false;
-//        }
-//
-//        OGRPoint pt;
-//        pt.setX(point_lanelet2.getX());
-//        pt.setY(point_lanelet2.getY());
-//
-//        ring_lanelet2_poly.addPoint(&pt);
-//      }
-//      for (const OGRPoint & point_to_combine : ls_to_combine) {
-//        OGRPoint pt;
-//        pt.setX(point_to_combine.getX());
-//        pt.setY(point_to_combine.getY());
-//
-//        ring_lanelet2_poly.addPoint(&pt);
-//      }
-//
-//      ring_lanelet2_poly.addPoint(&first_point_in_ls);
-//
-//      polygon_lanelet2.addRing(&ring_lanelet2_poly);
-//      lanelet2_layer_poly_feature->SetGeometry(&polygon_lanelet2);
-//
-//      if (lanelet2_layer_poly->CreateFeature(lanelet2_layer_poly_feature) != OGRERR_NONE) {
-//        printf("Failed to create feature in shapefile.\n");
-//        exit(1);
-//      }
-//
-//      for (auto & gridFeature : gridLayer) {
-//        OGRGeometry * grid_geometry = gridFeature->GetGeometryRef();
-//        OGRGeometry * lanelet2_geom_polygon = lanelet2_layer_poly_feature->GetGeometryRef();
-//
-//        if (grid_geometry->Intersects(lanelet2_geom_polygon)) {
-//          if (
-//            std::find(grid_numbers.begin(), grid_numbers.end(), gridFeature->GetFID()) ==
-//            grid_numbers.end()) {
-//            grid_numbers.push_back(gridFeature->GetFID());
-//            true_counter++;
-//          }
-//        } else {
-//          false_counter++;
-//        }
-//      }
-//
-//      OGRFeature::DestroyFeature(lanelet2_layer_poly_feature);
-//    } else if (counter % 2 == 1) {
-//      ls_to_combine = linestring_lanelet2;
-//      ls_to_combine->reversePoints();
-//    }
-
     // lanelet2 linestring part
 
     OGRLineString * linestring = geometry_lanelet2->toLineString();
@@ -322,19 +257,6 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
   }
 
   OGRFeature::DestroyFeature(poFeature_lanelet2);
-
-
-//  std::vector<long> remove_vec;
-//  std::vector<long> whole_vec;
-//  for (long i = 1; i <= gridLayer->GetFeatureCount(); i++) {
-//    whole_vec.push_back(i);
-//  }
-//
-//  remove_vec = vectorDifference(whole_vec, grid_numbers);
-//
-//  for (long grid_to_remove : remove_vec) {
-//    gridLayer->DeleteFeature(grid_to_remove);
-//  }
 
 
   rclcpp::shutdown();
