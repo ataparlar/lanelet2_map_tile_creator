@@ -1,6 +1,12 @@
 /*:
   ros__parameters:
     mgrs_grid: 35TPF
+    grid_edge_size: 300.0  # in meters
+
+    # input file
     lanelet2_map_path: /home/ataparlar/data/gis_data/lanelet2_map_tile_creator/maps/lanelet2_map_sorted.osm
-    grid_edge_size: 20.0  # in meters
-    output_directory: /home/ataparlar/data/gis_data/lanelet2_map_tile_creator/maps/  # in meters
+
+    # export files
+    osmium_extract_dir: /home/ataparlar/data/gis_data/lanelet2_map_tile_creator/test/  # in meters
+    osmium_config_file_path: /home/ataparlar/data/gis_data/lanelet2_map_tile_creator/test/test_config.json  # in meters
+    metadata_file_path: /home/ataparlar/data/gis_data/lanelet2_map_tile_creator/test/metadata.yaml  # in meters

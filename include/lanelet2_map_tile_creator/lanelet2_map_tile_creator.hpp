@@ -20,7 +20,9 @@ public:
   std::string mgrs_grid;
   std::string lanelet2_map_path;
   double grid_edge_size;
-  std::string output_directory;
+  std::string osmium_config_file_path;
+  std::string metadata_file_path;
+  std::string osmium_extract_dir;
 
 private:
 
