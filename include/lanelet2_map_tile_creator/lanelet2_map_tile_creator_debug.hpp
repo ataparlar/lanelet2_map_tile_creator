@@ -2,8 +2,8 @@
 // Created by ataparlar on 01.02.2024.
 //
 
-#ifndef BUILD_LANELET2_MAP_TILE_CREATOR_HPP
-#define BUILD_LANELET2_MAP_TILE_CREATOR_HPP
+#ifndef BUILD_LANELET2_MAP_TILE_CREATOR_DEBUG_HPP
+#define BUILD_LANELET2_MAP_TILE_CREATOR_DEBUG_HPP
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -11,10 +11,10 @@
 namespace lanelet2_map_tile_creator {
 
 
-class Lanelet2MapTileCreator : public rclcpp::Node
+class Lanelet2MapTileCreatorDebug : public rclcpp::Node
 {
 public:
-  explicit Lanelet2MapTileCreator(const rclcpp::NodeOptions & options);
+  explicit Lanelet2MapTileCreatorDebug(const rclcpp::NodeOptions & options);
 
   // params
   std::string mgrs_grid;
@@ -44,4 +44,4 @@ private:
 };
 }
 
-#endif  // BUILD_LANELET2_MAP_TILE_CREATOR_HPP
+#endif  // BUILD_LANELET2_MAP_TILE_CREATOR_DEBUG_HPP

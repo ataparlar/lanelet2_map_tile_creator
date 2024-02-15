@@ -4,6 +4,8 @@
 
 #include "lanelet2_map_tile_creator/lanelet2_map_tile_creator.hpp"
 
+//#include "osmium/
+
 #include "lanelet2_io/Io.h"
 #include "lanelet2_projection/UTM.h"
 #include "ogrsf_frmts.h"
@@ -26,9 +28,11 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
   this->declare_parameter("mgrs_grid", "35TPF");
   this->declare_parameter("lanelet2_map_path", "/");
   this->declare_parameter("grid_edge_size", 5000.0);
+  this->declare_parameter("output_directory", "/");
   mgrs_grid = this->get_parameter("mgrs_grid").as_string();
   lanelet2_map_path = this->get_parameter("lanelet2_map_path").as_string();
   grid_edge_size = this->get_parameter("grid_edge_size").as_double();
+  output_directory = this->get_parameter("output_directory").as_string();
 
   const char * pszDriverName = "GPKG";
   GDALDriver * poDriver;
@@ -38,22 +42,23 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
     printf("%s driver not available.\n", pszDriverName);
     exit(1);
   }
+
   GDALDataset * poDS;
   poDS = poDriver->Create(
-    "/home/ataparlar/data/gis_data/lanelet2_map_tile_creator/polygon_out_x.gpkg", 0, 0, 0,
+    "/home/ataparlar/data/gis_data/lanelet2_map_tile_creator/polygon_out.gpkg", 0, 0, 0,
     GDT_Unknown, NULL);
   if (poDS == NULL) {
     printf("Creation of output file failed.\n");
     exit(1);
   }
 
-  auto * sourceSRS = new OGRSpatialReference();
-  sourceSRS->importFromEPSG(4326);
-  char * pszWKT = NULL;
-  sourceSRS->exportToWkt(&pszWKT);
+//  auto * sourceSRS = new OGRSpatialReference();
+//  sourceSRS->importFromEPSG(4326);
+//  char * pszWKT = NULL;
+//  sourceSRS->exportToWkt(&pszWKT);
 
   OGRLayer * gridLayer;
-  gridLayer = poDS->CreateLayer("5km_grid", NULL, wkbPolygon, NULL);
+  gridLayer = poDS->CreateLayer("grids", NULL, wkbPolygon, NULL);
   if (gridLayer == NULL) {
     printf("Layer creation failed.\n");
     exit(1);
@@ -63,7 +68,6 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
     printf("Creating Number field failed.\n");
     exit(1);
   }
-  std::cout << "grid layer created" << std::endl;
 
   int zone, prec;
   bool northp;
@@ -148,11 +152,17 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
       OGRFeature::DestroyFeature(gridFeature);
     }
   }
+  std::cout << "grid layer created" << std::endl;
 
-  auto * sourceSRS2 = new OGRSpatialReference();
-  sourceSRS2->importFromEPSG(4326);
-  char * pszWKT2 = NULL;
-  sourceSRS2->exportToWkt(&pszWKT2);
+
+
+
+
+
+//  auto * sourceSRS2 = new OGRSpatialReference();
+//  sourceSRS2->importFromEPSG(4326);
+//  char * pszWKT2 = NULL;
+//  sourceSRS2->exportToWkt(&pszWKT2);
 
   OGRLayer * lanelet2_layer;
   lanelet2_layer = poDS->CreateLayer("lanelet2_layer", nullptr, wkbLineString, nullptr);
@@ -233,7 +243,19 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
     OGRFeature::DestroyFeature(lanelet2_feature);
   }
 
+
+
+
+
+
   gridLayer->SetSpatialFilter(&linestring_lanelet2_whole);
+
+
+
+
+
+
+
 
   std::ofstream metadata(
     "/home/ataparlar/data/gis_data/lanelet2_map_tile_creator/maps/tmp_lanelet2_map_metadata.yaml");
@@ -250,9 +272,12 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
       exit(1);
     }
 
-    nlohmann::json polygon_json = nlohmann::json::array({});
-    nlohmann::json polygon_json2 = nlohmann::json::array({});
 
+
+
+//    for config.json and metadata.yaml
+//    --------------------------------------------------------------------------------
+    nlohmann::json polygon_json = nlohmann::json::array({});
     std::string metadata_object;
     metadata_object += std::to_string(feature->GetFID()) + ".osm:\n";
     metadata_object += "  id: " + std::to_string(feature->GetFID()) + "\n";
@@ -274,9 +299,8 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
         }
       }
     }
-
     metadata << metadata_object;
-
+    nlohmann::json polygon_json2 = nlohmann::json::array({});
     polygon_json2.push_back(polygon_json);
     std::string map_name = std::to_string(feature->GetFID()) + ".osm";
     nlohmann::json extract({
@@ -286,6 +310,9 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
       {"polygon", polygon_json2},
     });
     extracts.push_back(extract);
+    //    --------------------------------------------------------------------------------
+
+
   }
 
   OGRFeature::DestroyFeature(poFeature_lanelet2);

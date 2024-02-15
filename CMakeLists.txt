@@ -22,10 +22,12 @@ include_directories(include
         ${lanelet2_INCLUDE_DIRS})
 
 set(DUMMY_LANELET2_LIB_SRC
-        src/lanelet2_map_tile_creator.cpp)
+        src/lanelet2_map_tile_creator.cpp
+        src/lanelet2_map_tile_creator_debug.cpp)
 
 set(DUMMY_LANELET2_LIB_HEADERS
-        include/lanelet2_map_tile_creator/lanelet2_map_tile_creator.hpp)
+        include/lanelet2_map_tile_creator/lanelet2_map_tile_creator.hpp
+        include/lanelet2_map_tile_creator/lanelet2_map_tile_creator_debug.hpp)
 
 
 ament_auto_add_library(${PROJECT_NAME} SHARED
@@ -61,6 +63,9 @@ target_link_libraries(${PROJECT_NAME}
 rclcpp_components_register_node(${PROJECT_NAME}
         PLUGIN "lanelet2_map_tile_creator::Lanelet2MapTileCreator"
         EXECUTABLE lanelet2_map_tile_creator_exe)
+rclcpp_components_register_node(${PROJECT_NAME}
+        PLUGIN "lanelet2_map_tile_creator::Lanelet2MapTileCreatorDebug"
+        EXECUTABLE lanelet2_map_tile_creator_debug_exe)
 
 if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)
