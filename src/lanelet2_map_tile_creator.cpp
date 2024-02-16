@@ -69,9 +69,8 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
 
   int zone, prec;
   bool northp;
-  double origin_x, origin_y, origin_lat, origin_lon, x, y;
+  double origin_x, origin_y, x, y;
   GeographicLib::MGRS::Reverse(mgrs_grid, zone, northp, origin_x, origin_y, prec);
-  GeographicLib::UTMUPS::Reverse(zone, northp, origin_x, origin_y, origin_lat, origin_lon);
   x = origin_x - 50000;
   y = origin_y - 50000;
 
@@ -189,6 +188,7 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
     OGRLineString * linestring_lanelet2 = geometry_lanelet2->toLineString();
 
     linestring_lanelet2_whole.addGeometry(linestring_lanelet2);
+//    linestring_lanelet2_whole.get
   }
 
 
