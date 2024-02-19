@@ -194,7 +194,7 @@ Lanelet2MapTileCreator::Lanelet2MapTileCreator(const rclcpp::NodeOptions & optio
 
   // filter the grids with lanelet2 map area
   gridLayer->SetSpatialFilter(&linestring_lanelet2_whole);
-
+//  linestring_lanelet2_whole.getGeometryName()
 
 
   std::ofstream metadata(metadata_file_path);
