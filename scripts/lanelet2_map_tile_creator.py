@@ -9,7 +9,7 @@ import json
 if __name__ == "__main__":
 
     mgrs_grid = "35TPF"
-    grid_edge_size = 5000
+    grid_edge_size = 50
     lanelet2_map_path = "/home/ataparlar/data/gis_data/lanelet2_map_tile_creator/maps/lanelet2_map_sorted.osm"
     metadata_file_path = "/home/ataparlar/data/gis_data/lanelet2_map_tile_creator/test/metadata.yaml"
     osmium_config_file_path = "/home/ataparlar/data/gis_data/lanelet2_map_tile_creator/test/test_config.json"
@@ -50,6 +50,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------------
     grid_count = 100000 / grid_edge_size
     for i in range(int(grid_count)):
+        print(i)
         for j in range(int(grid_count)):
             feature_grid = ogr.Feature(layer_grids.GetLayerDefn())
 
@@ -70,9 +71,7 @@ if __name__ == "__main__":
                     pt_x = x + (i * grid_edge_size)
                     pt_y = y + (j * grid_edge_size) + grid_edge_size
                 pt_lat, pt_lon = utm.to_latlon(pt_y, pt_x, zone, northp)
-                new_point = ogr.Geometry(ogr.wkbPoint)
-                new_point.SetPoint_2D(0, pt_lon, pt_lat)
-                linear_ring.AddGeometry(new_point)
+                linear_ring.AddPoint_2D(pt_lon, pt_lat)
 
             polygon = ogr.Geometry(ogr.wkbPolygon)
             polygon.AddGeometry(linear_ring)
@@ -167,6 +166,7 @@ if __name__ == "__main__":
     for filtered_grid in layer_filtered_grids:
         polygon_inner = []
         geometry_filtered_grid = filtered_grid.GetGeometryRef()
+        print(geometry_filtered_grid)
 
         # print("geometry_grid.GetGeometryCount(): ", geometry_filtered_grid.GetGeometryCount())
 
@@ -175,17 +175,14 @@ if __name__ == "__main__":
 
         counter = 0
         for linearring in geometry_filtered_grid:
-            print("linearring.GetGeometryCount(): ", linearring.GetGeometryCount())
-
-            if counter < 5:
-                point_lat = linearring.GetPoint(0)[1]
-                point_lon = linearring.GetPoint(0)[0]
-                counter += 1
-
+            for i in range(5):
+                point_lat = linearring.GetPoint(i)[1]
+                point_lon = linearring.GetPoint(i)[0]
                 point_list = [point_lon, point_lat]
                 polygon_inner.append(point_list)
-            else:
-                counter = 0
+
+
+
         polygon_outer = [polygon_inner]
         extract_element = {
             "description" : "optional description",
